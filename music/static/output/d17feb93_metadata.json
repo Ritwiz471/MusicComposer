@@ -1,0 +1,30 @@
+{
+  "title": "Amazing Musical",
+  "melody": {
+    "notes": "C4 D4 E4 F4 G4 A4 B4 C5",
+    "scale": "minor",
+    "tempo": 107
+  },
+  "harmony": {
+    "chords": "C | G | Am | F",
+    "key": "A minor"
+  },
+  "rhythm": {
+    "pattern": "x-x-x-x-",
+    "time_signature": "4/4",
+    "groove": "Steady"
+  },
+  "arrangement": {
+    "instrumentation": [
+      "piano",
+      "bass",
+      "drums"
+    ],
+    "structure": "Intro - Verse - Chorus - Verse - Chorus - Outro",
+    "dynamics": "mf throughout with a crescendo at the end"
+  },
+  "score": null,
+  "midi_path": "static/output/Amazing_Musical.mid",
+  "feedback": [],
+  "iteration": 0
+}

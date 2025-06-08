@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Music Composer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #0a0a0e;
+            color: #f5f5f5;
+            font-family: 'Inter', sans-serif;
+            cursor: default;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Grid background */
+        .grid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: 50px 50px;
+            background-image: 
+                linear-gradient(to right, rgba(20, 20, 30, 0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(20, 20, 30, 0.1) 1px, transparent 1px);
+            z-index: -2;
+        }
+        
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(106, 90, 205, 0.25) 0%, rgba(0, 0, 0, 0) 70%);
+            z-index: -1;
+            transition: background 0.5s ease;
+            pointer-events: none;
+        }
+        
+        /* Frosted glass elements */
+        .glass-card {
+            background: rgba(22, 22, 26, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .glass-card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg, 
+                rgba(255, 255, 255, 0) 0%, 
+                rgba(255, 255, 255, 0.05) 50%, 
+                rgba(255, 255, 255, 0) 100%
+            );
+            transition: left 0.7s ease-in-out;
+            pointer-events: none;
+        }
+        
+        .glass-card:hover:before {
+            left: 100%;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(var(--accent-rgb), 0.2);
+        }
+        
+        /* Tech elements */
+        .tech-border {
+            position: relative;
+        }
+        
+        .tech-border:after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, transparent 20%, var(--accent-color) 40%, transparent 60%);
+            border-radius: 14px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .tech-border:hover:after {
+            opacity: 1;
+        }
+        
+        .corner-accent {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border: 1px solid var(--accent-color);
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+        
+        .top-left {
+            top: -1px;
+            left: -1px;
+            border-right: none;
+            border-bottom: none;
+        }
+        
+        .top-right {
+            top: -1px;
+            right: -1px;
+            border-left: none;
+            border-bottom: none;
+        }
+        
+        .bottom-left {
+            bottom: -1px;
+            left: -1px;
+            border-right: none;
+            border-top: none;
+        }
+        
+        .bottom-right {
+            bottom: -1px;
+            right: -1px;
+            border-left: none;
+            border-top: none;
+        }
+        
+        .glass-card:hover .corner-accent {
+            width: 20px;
+            height: 20px;
+            opacity: 1;
+        }
+        
+        .input-field {
+            background: rgba(20, 20, 25, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f5f5f5;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(12px);
+        }
+        
+        .input-field:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.3);
+            outline: none;
+        }
+        
+        /* Glow effect for primary button */
+        .btn-primary {
+            background: var(--accent-color);
+            color: #111;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.5);
+        }
+        
+        .btn-primary:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            z-index: -1;
+        }
+        
+        .btn-primary:hover {
+            filter: brightness(1.2);
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.7);
+        }
+        
+        .btn-primary:hover:before {
+            left: 100%;
+        }
+        
+        /* Interactive waveform */
+        .waveform {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .bar {
+            background: var(--accent-color);
+            height: 100%;
+            width: 3px;
+            margin: 0 2px;
+            border-radius: 2px;
+            animation: none;
+            transition: background 0.5s ease, box-shadow 0.5s ease;
+            box-shadow: 0 0 5px rgba(var(--accent-rgb), 0.3);
+        }
+        
+        @keyframes sound {
+            0% { height: 10%; }
+            20% { height: 60%; }
+            40% { height: 30%; }
+            60% { height: 80%; }
+            80% { height: 40%; }
+            100% { height: 20%; }
+        }
+        
+        .playing .bar {
+            animation: sound 1.2s linear infinite alternate;
+            box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.7);
+        }
+        
+        .bar:nth-child(1) { animation-delay: 0.0s; }
+        .bar:nth-child(2) { animation-delay: 0.1s; }
+        .bar:nth-child(3) { animation-delay: 0.2s; }
+        .bar:nth-child(4) { animation-delay: 0.3s; }
+        .bar:nth-child(5) { animation-delay: 0.4s; }
+        .bar:nth-child(6) { animation-delay: 0.5s; }
+        .bar:nth-child(7) { animation-delay: 0.6s; }
+        .bar:nth-child(8) { animation-delay: 0.7s; }
+        .bar:nth-child(9) { animation-delay: 0.8s; }
+        .bar:nth-child(10) { animation-delay: 0.9s; }
+        
+        #player-section {
+            transition: all 0.5s ease;
+            height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        
+        #player-section.active {
+            height: auto;
+            opacity: 1;
+            padding: 2rem 0;
+        }
+        
+        /* Loading animation */
+        .loading-animation {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .spinner {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+        
+        .spinner-ring {
+            position: absolute;
+            border: 4px solid transparent;
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+        }
+        
+        .spinner-ring:nth-child(1) {
+            width: 60px;
+            height: 60px;
+            border-width: 4px;
+        }
+        
+        .spinner-ring:nth-child(2) {
+            width: 45px;
+            height: 45px;
+            top: 7.5px;
+            left: 7.5px;
+            border-width: 3px;
+            animation-duration: 1.75s;
+            animation-direction: reverse;
+        }
+        
+        .spinner-ring:nth-child(3) {
+            width: 30px;
+            height: 30px;
+            top: 15px;
+            left: 15px;
+            border-width: 2px;
+            animation-duration: 2s;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Help tooltip with tech styling */
+        .help-tooltip {
+            display: inline-block;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .help-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 250px;
+            background-color: rgba(20, 20, 30, 0.95);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -125px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateY(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(var(--accent-rgb), 0.3);
+            box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.2);
+        }
+        
+        .help-tooltip .tooltip-text:after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(var(--accent-rgb), 0.3) transparent transparent transparent;
+        }
+        
+        .help-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* CSS Variables */
+        :root {
+            --accent-color: #6A5ACD;
+            --accent-rgb: 106, 90, 205;
+        }
+        
+        /* Particles with tech styling */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .particle {
+            position: absolute;
+            background: var(--accent-color);
+            opacity: 0;
+            animation: float 15s infinite ease-in-out;
+        }
+        
+        .tech-particle {
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+            25% { opacity: 0.3; }
+            50% { opacity: 0.15; transform: translateY(-50px) translateX(10px) rotate(180deg); }
+            75% { opacity: 0.3; }
+            100% { transform: translateY(-100px) translateX(20px) rotate(360deg); opacity: 0; }
+        }
+        
+        /* HUD elements */
+        .hud-corner {
+            position: fixed;
+            width: 150px;
+            height: 150px;
+            pointer-events: none;
+            z-index: 9;
+            opacity: 0.5;
+            transition: opacity 0.5s ease;
+        }
+        
+        .hud-corner:hover {
+            opacity: 0.8;
+        }
+        
+        .hud-top-left {
+            top: 0;
+            left: 0;
+            border-top: 2px solid var(--accent-color);
+            border-left: 2px solid var(--accent-color);
+            border-top-left-radius: 2px;
+        }
+        
+        .hud-top-right {
+            top: 0;
+            right: 0;
+            border-top: 2px solid var(--accent-color);
+            border-right: 2px solid var(--accent-color);
+            border-top-right-radius: 2px;
+        }
+        
+        .hud-bottom-left {
+            bottom: 0;
+            left: 0;
+            border-bottom: 2px solid var(--accent-color);
+            border-left: 2px solid var(--accent-color);
+            border-bottom-left-radius: 2px;
+        }
+        
+        .hud-bottom-right {
+            bottom: 0;
+            right: 0;
+            border-bottom: 2px solid var(--accent-color);
+            border-right: 2px solid var(--accent-color);
+            border-bottom-right-radius: 2px;
+        }
+        
+        /* Status indicators */
+        .status-indicator {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            display: flex;
+            align-items: center;
+            padding: 8px 15px;
+            background: rgba(20, 20, 25, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(var(--accent-rgb), 0.3);
+            color: var(--accent-color);
+            font-size: 0.8rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            z-index: 100;
+        }
+        
+        .status-indicator.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .pulse {
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
+            margin-right: 10px;
+            position: relative;
+        }
+        
+        .pulse:before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            opacity: 0.7;
+            animation: pulse-animation 2s infinite;
+        }
+        
+        @keyframes pulse-animation {
+            0% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+        
+        /* Audio controls styling */
+        audio::-webkit-media-controls-panel {
+            background-color: rgba(20, 20, 25, 0.7);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        audio::-webkit-media-controls-play-button,
+        audio::-webkit-media-controls-mute-button {
+            background-color: var(--accent-color);
+            border-radius: 50%;
+        }
+        
+        audio::-webkit-media-controls-timeline {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            height: 4px;
+        }
+        
+        audio::-webkit-media-controls-timeline-container {
+            padding: 0 10px;
+        }
+        
+        /* Circular progress */
+        .circular-progress {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+        
+        .circular-progress svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+        
+        .circular-progress circle {
+            fill: none;
+            stroke-width: 5;
+            stroke-linecap: round;
+            stroke-dasharray: 283;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+        
+        .progress-bg {
+            stroke: rgba(255, 255, 255, 0.1);
+        }
+        
+        .progress-bar {
+            stroke: var(--accent-color);
+            stroke-dashoffset: 283;
+        }
+        
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--accent-color);
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        /* Console output animation */
+        .console-output {
+            background: rgba(20, 20, 25, 0.7);
+            border-radius: 8px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.5s ease;
+            margin-top: 10px;
+        }
+        
+        .console-output.active {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .console-line {
+            margin: 0;
+            padding: 2px 0;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        .console-line.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .console-prompt {
+            color: var(--accent-color);
+            margin-right: 5px;
+        }
+        
+        /* Interactive cards */
+        .interactive-card {
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease;
+        }
+        
+        .interactive-card:hover {
+            transform: perspective(1000px) rotateX(2deg) rotateY(5deg);
+        }
+        
+        /* Download buttons with tech styling */
+        .tech-button {
+            background: rgba(20, 20, 25, 0.7);
+            border: 1px solid rgba(var(--accent-rgb), 0.3);
+            border-radius: 8px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tech-button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(var(--accent-rgb), 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+        
+        .tech-button:hover {
+            background: rgba(var(--accent-rgb), 0.2);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3);
+        }
+        
+        .tech-button:hover:before {
+            transform: translateX(100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-background"></div>
+    <div class="gradient-bg"></div>
+    <div class="particles"></div>
+    
+    <!-- HUD corners -->
+    <div class="hud-corner hud-top-left"></div>
+    <div class="hud-corner hud-top-right"></div>
+    <div class="hud-corner hud-bottom-left"></div>
+    <div class="hud-corner hud-bottom-right"></div>
+    
+    <!-- Status indicator -->
+    <div id="status-indicator" class="status-indicator">
+        <div class="pulse"></div>
+        <span id="status-text">System Ready</span>
+    </div>
+    
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl font-bold mb-2">AI Music Composer</h1>
+            <p class="text-xl opacity-80">Create unique compositions with AI assistance</p>
+        </header>
+
+        <div class="max-w-3xl mx-auto">
+            <div class="glass-card p-6 mb-8 tech-border interactive-card">
+                <div class="corner-accent top-left"></div>
+                <div class="corner-accent top-right"></div>
+                <div class="corner-accent bottom-left"></div>
+                <div class="corner-accent bottom-right"></div>
+                
+                <form id="composition-form" class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="title" class="block mb-2 text-sm font-medium">Title</label>
+                            <input type="text" id="title" name="title" class="input-field w-full p-3" placeholder="Enter composition title" required>
+                        </div>
+                        <div>
+                            <label for="style" class="block mb-2 text-sm font-medium">Style</label>
+                            <select id="style" name="style" class="input-field w-full p-3" required>
+                                <option value="classical">Classical</option>
+                                <option value="jazz">Jazz</option>
+                                <option value="pop">Pop</option>
+                                <option value="folk">Folk</option>
+                                <option value="electronic">Electronic</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="mood" class="block mb-2 text-sm font-medium">Mood</label>
+                        <div class="relative">
+                            <input type="text" id="mood" name="mood" class="input-field w-full p-3" placeholder="e.g., happy, sad, energetic, calm..." required>
+                            <span class="help-tooltip absolute right-3 top-3 text-gray-400">
+                                <i class="fas fa-question-circle"></i>
+                                <span class="tooltip-text">
+                                    Try moods like happy, sad, melancholic, energetic, calm, romantic, mysterious, nostalgic, triumphant, playful
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="constraints" class="block mb-2 text-sm font-medium">Constraints (Optional)</label>
+                        <div class="relative">
+                            <textarea id="constraints" name="constraints" class="input-field w-full p-3 h-24" placeholder="Enter JSON constraints or plain text description"></textarea>
+                            <span class="help-tooltip absolute right-3 top-3 text-gray-400">
+                                <i class="fas fa-question-circle"></i>
+                                <span class="tooltip-text">
+                                    Examples: {"max_length": 16, "key": "C major"} or "Include a bridge section with key change"
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" id="generate-btn" class="btn-primary px-8 py-3">
+                            <span>Generate Composition</span>
+                        </button>
+                    </div>
+                    
+
+                </form>
+            </div>
+            
+            <div id="loading-section" class="glass-card p-8 text-center hidden tech-border">
+                <div class="corner-accent top-left"></div>
+                <div class="corner-accent top-right"></div>
+                <div class="corner-accent bottom-left"></div>
+                <div class="corner-accent bottom-right"></div>
+                
+                <h3 class="text-xl mb-4">Composing your music...</h3>
+                <p class="text-sm opacity-70 mb-6">This may take a minute or two as our AI agents collaborate</p>
+                
+                <div class="flex justify-center items-center">
+                    <div class="spinner mr-8">
+                        <div class="spinner-ring"></div>
+                        <div class="spinner-ring"></div>
+                        <div class="spinner-ring"></div>
+                    </div>
+                    
+                    <div class="circular-progress">
+                        <svg>
+                            <circle class="progress-bg" cx="30" cy="30" r="25" />
+                            <circle class="progress-bar" cx="30" cy="30" r="25" />
+                        </svg>
+                        <div class="progress-text">0%</div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 text-left">
+                    <div id="loading-status" class="text-sm text-left opacity-70"></div>
+                </div>
+            </div>
+            
+            <div id="player-section" class="glass-card tech-border interactive-card">
+                <div class="corner-accent top-left"></div>
+                <div class="corner-accent top-right"></div>
+                <div class="corner-accent bottom-left"></div>
+                <div class="corner-accent bottom-right"></div>
+                
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 id="composition-title" class="text-2xl font-bold"></h3>
+                        <div class="flex items-center">
+                            <span id="composition-style" class="text-sm px-3 py-1 rounded-full mr-2" style="background: rgba(255,255,255,0.1)"></span>
+                            <span id="composition-mood" class="text-sm px-3 py-1 rounded-full" style="background: rgba(255,255,255,0.1)"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="audio-player">
+                        <audio id="audio-player" controls class="w-full mb-4"></audio>
+                        <div id="waveform" class="waveform">
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="error-message" class="hidden mt-4 p-4 bg-red-900 bg-opacity-20 border border-red-700 rounded-lg text-red-300"></div>
+                    
+                    <div class="mt-6 flex justify-between">
+                        <a id="download-midi" href="#" class="tech-button" download>
+                            <i class="fas fa-download mr-2"></i> Download MIDI
+                        </a>
+                        <a id="download-audio" href="#" class="tech-button" download>
+                            <i class="fas fa-download mr-2"></i> Download Audio
+                        </a>
+                    </div>
+                    
+                    <div id="composition-details" class="mt-6 console-output">
+                        <p class="console-line">
+                            <span class="console-prompt">></span> Composition details will appear here
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="mt-16 text-center text-sm opacity-60">
+            <p>© 2025 AI Music Composer · Powered by Advanced Music Generation Agents</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('composition-form');
+            const generateBtn = document.getElementById('generate-btn');
+            const loadingSection = document.getElementById('loading-section');
+            const playerSection = document.getElementById('player-section');
+            const audioPlayer = document.getElementById('audio-player');
+            const waveform = document.getElementById('waveform');
+            const errorMessage = document.getElementById('error-message');
+            const downloadMidi = document.getElementById('download-midi');
+            const downloadAudio = document.getElementById('download-audio');
+            const compositionTitle = document.getElementById('composition-title');
+            const compositionStyle = document.getElementById('composition-style');
+            const compositionMood = document.getElementById('composition-mood');
+            const gradientBg = document.querySelector('.gradient-bg');
+            const particles = document.querySelector('.particles');
+            const statusIndicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            const consoleOutput = document.getElementById('console-output');
+            const compositionDetails = document.getElementById('composition-details');
+            const loadingStatus = document.getElementById('loading-status');
+            const progressBar = document.querySelector('.progress-bar');
+            const progressText = document.querySelector('.progress-text');
+            
+            // Show status indicator with message
+            function showStatus(message, duration = 3000) {
+                statusText.textContent = message;
+                statusIndicator.classList.add('active');
+                
+                setTimeout(() => {
+                    statusIndicator.classList.remove('active');
+                }, duration);
+            }
+            
+            // Create interactive particles for ambient background
+            function createParticles() {
+                particles.innerHTML = '';
+                const particleCount = 20;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('particle');
+                    
+                    // Make some particles tech-styled
+                    if (i % 3 === 0) {
+                        particle.classList.add('tech-particle');
+                    }
+                    
+                    // Random size between 5px and 25px
+                    const size = Math.random() * 20 + 5;
+                    particle.style.width = `${size}px`;
+                    particle.style.height = `${size}px`;
+                    
+                    // Random position
+                    particle.style.left = `${Math.random() * 100}%`;
+                    particle.style.top = `${Math.random() * 100}%`;
+                    
+                    // Random animation duration and delay
+                    const duration = Math.random() * 20 + 10;
+                    const delay = Math.random() * 10;
+                    particle.style.animationDuration = `${duration}s`;
+                    particle.style.animationDelay = `${delay}s`;
+                    
+                    particles.appendChild(particle);
+                }
+            }
+            
+            createParticles();
+            
+            // Add console output
+            function addConsoleOutput(text, delay = 0) {
+                const line = document.createElement('p');
+                line.classList.add('console-line');
+                
+                const prompt = document.createElement('span');
+                prompt.classList.add('console-prompt');
+                prompt.textContent = '> ';
+                
+                line.appendChild(prompt);
+                line.appendChild(document.createTextNode(text));
+                
+                consoleOutput.appendChild(line);
+                
+                // Activate console if not already active
+                if (!consoleOutput.classList.contains('active')) {
+                    consoleOutput.classList.add('active');
+                }
+                
+                // Animate line after a delay
+                setTimeout(() => {
+                    line.classList.add('active');
+                }, delay);
+                
+                // Scroll to bottom
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                
+                return line;
+            }
+            
+            // Simulate progress during loading
+            function simulateProgress() {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 5;
+                    if (progress > 100) progress = 100;
+                    
+                    // Update circular progress
+                    const dashoffset = 283 - (283 * progress / 100);
+                    progressBar.style.strokeDashoffset = dashoffset;
+                    progressText.textContent = `${Math.round(progress)}%`;
+                    
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                    }
+                }, 300);
+                
+                return interval;
+            }
+            
+            // Add loading status messages
+            function simulateLoadingMessages() {
+                const messages = [
+                    "Initializing melody agent...",
+                    "Generating melodic theme...",
+                    "Initializing harmony agent...",
+                    "Creating chord progression...",
+                    "Initializing rhythm agent...",
+                    "Developing rhythmic patterns...",
+                    "Initializing arrangement agent...",
+                    "Orchestrating composition...",
+                    "Finalizing composition..."
+                ];
+                
+                let index = 0;
+                const interval = setInterval(() => {
+                    if (index < messages.length) {
+                        loadingStatus.textContent = messages[index];
+                        index++;
+                    } else {
+                        clearInterval(interval);
+                    }
+                }, 1000);
+                
+                return interval;
+            }
+            
+            // Update gradient based on cursor position with smoothing
+            let mouseX = window.innerWidth / 2;
+            let mouseY = window.innerHeight / 2;
+            
+            document.addEventListener('mousemove', function(e) {
+                // Smooth tracking
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+            
+            // Smooth gradient animation
+            function animateGradient() {
+                // Calculate position as percentage of viewport
+                const xPercent = Math.round(mouseX / window.innerWidth * 100);
+                const yPercent = Math.round(mouseY / window.innerHeight * 100);
+                
+                // Update the gradient position
+                gradientBg.style.background = `radial-gradient(circle at ${xPercent}% ${yPercent}%, rgba(var(--accent-rgb), 0.25) 0%, rgba(0, 0, 0, 0) 70%)`;
+                
+                requestAnimationFrame(animateGradient);
+            }
+            
+            animateGradient();
+            
+            // Update accent color based on mood suggestions
+            const moodInput = document.getElementById('mood');
+            moodInput.addEventListener('input', function() {
+                // Simple color mapping for real-time feedback
+                const moodColors = {
+                    'happy': '#FFD700', // Gold
+                    'sad': '#4682B4',   // Steel Blue
+                    'energetic': '#FF4500', // Orange Red
+                    'calm': '#20B2AA',  // Light Sea Green
+                    'romantic': '#DA70D6', // Orchid
+                    'mysterious': '#483D8B', // Dark Slate Blue
+                };
+                
+                const mood = moodInput.value.toLowerCase();
+                let color = '#6A5ACD'; // Default color
+                
+                // Find matching color for the current mood input
+                for (const [key, value] of Object.entries(moodColors)) {
+                    if (mood.includes(key)) {
+                        color = value;
+                        break;
+                    }
+                }
+                
+                updateAccentColor(color);
+                showStatus(`Mood: ${moodInput.value}`, 1000);
+            });
+            
+            // Composition form interactive elements
+            document.getElementById('title').addEventListener('input', function() {
+                if (this.value.length > 3) {
+                    addConsoleOutput(`Title set to: "${this.value}"`);
+                }
+            });
+            
+            document.getElementById('style').addEventListener('change', function() {
+                addConsoleOutput(`Style selected: ${this.value}`);
+                showStatus(`Style: ${this.value}`, 1000);
+            });
+            
+            document.getElementById('constraints').addEventListener('input', function() {
+                if (this.value.length > 10 && this.value.length % 20 === 0) {
+                    addConsoleOutput(`Constraints detected: ${this.value.substring(0, 20)}...`);
+                }
+            });
+            
+            // Handle form submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Hide player and error message
+                playerSection.classList.remove('active');
+                errorMessage.classList.add('hidden');
+                
+                // Clear console
+                consoleOutput.innerHTML = '';
+                consoleOutput.classList.remove('active');
+                
+                // Add initial console message
+                addConsoleOutput("Initializing composition process...");
+                setTimeout(() => {
+                    addConsoleOutput(`Composition request sent for "${document.getElementById('title').value}"`, 100);
+                }, 300);
+                
+                // Show loading animation
+                loadingSection.classList.remove('hidden');
+                generateBtn.disabled = true;
+                
+                // Show status
+                showStatus("Generating composition...", 10000);
+                
+                // Start progress simulation
+                const progressInterval = simulateProgress();
+                const messagesInterval = simulateLoadingMessages();
+                
+                // Get form data
+                const formData = new FormData(form);
+                
+                // Send request to server
+                fetch('/generate', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Clear intervals
+                    clearInterval(progressInterval);
+                    clearInterval(messagesInterval);
+                    
+                    // Hide loading animation
+                    loadingSection.classList.add('hidden');
+                    generateBtn.disabled = false;
+                    
+                    if (data.error) {
+                        // Show error message
+                        errorMessage.textContent = data.error;
+                        errorMessage.classList.remove('hidden');
+                        
+                        // Add to console
+                        addConsoleOutput(`Error: ${data.error}`);
+                        
+                        // Show status
+                        showStatus("Composition failed", 3000);
+                        
+                        // Still update color if available
+                        if (data.color) {
+                            updateAccentColor(data.color);
+                        }
+                        return;
+                    }
+                    
+                    // Update composition info
+                    compositionTitle.textContent = data.title;
+                    compositionStyle.textContent = formData.get('style');
+                    compositionMood.textContent = formData.get('mood');
+                    
+                    // Update audio player
+                    audioPlayer.src = `/static/output/${data.audio_path}`;
+                    downloadMidi.href = `/static/output/${data.midi_path}`;
+                    downloadAudio.href = `/static/output/${data.audio_path}`;
+                    
+                    // Update accent color
+                    updateAccentColor(data.color);
+                    
+                    // Show player section
+                    playerSection.classList.add('active');
+                    
+                    // Add success message to console
+                    addConsoleOutput("Composition generated successfully!");
+                    
+                    // Show status
+                    showStatus("Composition ready", 3000);
+                    
+                    // Populate composition details
+                    populateCompositionDetails(data);
+                    
+                    // Setup audio player events
+                    audioPlayer.addEventListener('play', function() {
+                        waveform.classList.add('playing');
+                        showStatus("Playing composition", 2000);
+                    });
+                    
+                    audioPlayer.addEventListener('pause', function() {
+                        waveform.classList.remove('playing');
+                    });
+                    
+                    audioPlayer.addEventListener('ended', function() {
+                        waveform.classList.remove('playing');
+                        showStatus("Playback complete", 2000);
+                    });
+                })
+                .catch(error => {
+                    // Clear intervals
+                    clearInterval(progressInterval);
+                    clearInterval(messagesInterval);
+                    
+                    loadingSection.classList.add('hidden');
+                    generateBtn.disabled = false;
+                    errorMessage.textContent = 'An error occurred while generating your composition. Please try again.';
+                    errorMessage.classList.remove('hidden');
+                    
+                    // Add error to console
+                    addConsoleOutput(`Network error: ${error.message || 'Unknown error'}`);
+                    
+                    // Show status
+                    showStatus("Connection error", 3000);
+                    
+                    console.error('Error:', error);
+                });
+            });
+            
+            // Populate composition details
+            function populateCompositionDetails(data) {
+                compositionDetails.innerHTML = '';
+                compositionDetails.classList.add('active');
+                
+                const details = [
+                    `Title: ${data.title}`,
+                    `Style: ${document.getElementById('style').value}`,
+                    `Mood: ${document.getElementById('mood').value}`,
+                    `Generated on: ${new Date().toLocaleString()}`,
+                    `Color theme: ${data.color}`
+                ];
+                
+                details.forEach((detail, index) => {
+                    setTimeout(() => {
+                        const line = document.createElement('p');
+                        line.classList.add('console-line');
+                        
+                        const prompt = document.createElement('span');
+                        prompt.classList.add('console-prompt');
+                        prompt.textContent = '> ';
+                        
+                        line.appendChild(prompt);
+                        line.appendChild(document.createTextNode(detail));
+                        
+                        compositionDetails.appendChild(line);
+                        
+                        setTimeout(() => {
+                            line.classList.add('active');
+                        }, 50);
+                    }, index * 200);
+                });
+            }
+            
+            // Function to update accent color
+            function updateAccentColor(colorHex) {
+                // Convert hex to RGB for CSS variables
+                const r = parseInt(colorHex.slice(1, 3), 16);
+                const g = parseInt(colorHex.slice(3, 5), 16);
+                const b = parseInt(colorHex.slice(5, 7), 16);
+                
+                document.documentElement.style.setProperty('--accent-color', colorHex);
+                document.documentElement.style.setProperty('--accent-rgb', `${r}, ${g}, ${b}`);
+                
+                // Update particles color
+                document.querySelectorAll('.particle').forEach(particle => {
+                    particle.style.background = colorHex;
+                });
+                
+                // Update other elements that need the accent color
+                compositionMood.style.backgroundColor = `${colorHex}33`;
+                
+                // Update waveform bars
+                document.querySelectorAll('.bar').forEach(bar => {
+                    bar.style.background = colorHex;
+                    bar.style.boxShadow = `0 0 10px rgba(${r}, ${g}, ${b}, 0.5)`;
+                });
+                
+                // Update loading spinner
+                document.querySelectorAll('.spinner-ring').forEach(ring => {
+                    ring.style.borderTopColor = colorHex;
+                });
+                
+                // Update HUD corners
+                document.querySelectorAll('.hud-corner').forEach(corner => {
+                    corner.style.borderColor = colorHex;
+                });
+                
+                // Update pulse
+                document.querySelector('.pulse').style.backgroundColor = colorHex;
+                document.querySelector('.pulse:before').style.backgroundColor = colorHex;
+                
+                // Update progress bar
+                document.querySelector('.progress-bar').style.stroke = colorHex;
+            }
+            
+            // Initialize with default accent color and show welcome message
+            updateAccentColor('#6A5ACD');
+            setTimeout(() => {
+                showStatus("System ready", 3000);
+            }, 500);
+            
+            // Easter egg - Konami code
+            const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+            let konamiIndex = 0;
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.key === konamiCode[konamiIndex]) {
+                    konamiIndex++;
+                    if (konamiIndex === konamiCode.length) {
+                        // Activate easter egg
+                        document.body.classList.add('konami-active');
+                        showStatus("Konami code activated!", 5000);
+                        addConsoleOutput("SECRET MODE ACTIVATED: Advanced features unlocked!");
+                        
+                        // Create a special effect
+                        const specialEffect = document.createElement('div');
+                        specialEffect.style.position = 'fixed';
+                        specialEffect.style.top = '0';
+                        specialEffect.style.left = '0';
+                        specialEffect.style.width = '100%';
+                        specialEffect.style.height = '100%';
+                        specialEffect.style.backgroundColor = 'rgba(var(--accent-rgb), 0.2)';
+                        specialEffect.style.zIndex = '-1';
+                        specialEffect.style.animation = 'pulse 2s infinite';
+                        document.body.appendChild(specialEffect);
+                        
+                        setTimeout(() => {
+                            document.body.removeChild(specialEffect);
+                        }, 5000);
+                        
+                        konamiIndex = 0;
+                    }
+                } else {
+                    konamiIndex = 0;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

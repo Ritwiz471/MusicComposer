@@ -1,0 +1,28 @@
+flask
+Werkzeug
+music21
+
+python-dotenv
+
+# Core dependencies
+llama-index
+llama-index-llms-gemini
+llama-index-llms-mistralai
+llama-index-core
+llama-index-llms-google-genai
+
+# LLM APIs
+google-generativeai
+mistralai
+
+# Music representation and processing
+music21
+
+# Utilities
+numpy
+pandas
+typing-extensions
+python-dotenv
+
+# Workflow and orchestration
+pydantic
