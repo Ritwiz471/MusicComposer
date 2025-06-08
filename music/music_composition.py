@@ -774,8 +774,8 @@ class CompositionOrchestrator:
 # Example usage of the system
 def example_usage():
     api_keys = {
-        "gemini": "AIzaSyAGZmjNTZCwkaFdNGMC3uKwYXAX9wsuR0c",
-        "mistral": "jolgs3OzM3K93EBi1DNTF0itzEOQVaG7"
+        "gemini": <GEMINI_API_KEY>,
+        "mistral": <MISTRAL_API_KEY>
     }
     
     orchestrator = CompositionOrchestrator(api_keys)
