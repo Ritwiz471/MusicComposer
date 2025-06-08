@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 # API keys for services
 API_KEYS = {
-    "gemini": "AIzaSyCoLIPwyKC0Gg1WAdQLEYYgmIybFDNrwlI",
-    "mistral": "jolgs3OzM3K93EBi1DNTF0itzEOQVaG7"
+    "gemini": <GEMINI_API_KEY>,
+    "mistral": <MISTRAL_API_KEY>
 }
 
 # Ensure output directories exist
